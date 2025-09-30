@@ -57,10 +57,6 @@ class RegisteredUserController extends Controller
             'expires_at' => Carbon::now()->addMinutes(10),
         ]);
 
-        // Envoyer le code par email
-        Mail::to($user->email)->send(new SendOtpMail($code));
-
-        // Rediriger vers la page OTP
-        return redirect()->route('otp.show');
+        return redirect()->route('dashboard');
     }
 }
