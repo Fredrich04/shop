@@ -8,15 +8,13 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PayPalController;
+use App\Http\Controllers\AdminController;
+
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-
-Route::get('/paypal/payment', [PayPalController::class, 'createPayment'])->name('paypal.payment');
-Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
-Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
 
 
 Route::middleware(['auth'])->group(function () {
@@ -28,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/cart/remove', [ShopController::class, 'removeFromCart'])->name('api.cart.remove');
         Route::post('/checkout', [ShopController::class, 'checkout'])->name('api.checkout');
         Route::get('/orders', [ShopController::class, 'orders'])->name('api.orders');
+         Route::get('/products', [ShopController::class, 'getProducts'])->name('api.products');
     });
 });
 
@@ -44,5 +43,10 @@ Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleC
 
 Route::get('/auth/facebook', [SocialAuthController::class, 'redirectToFacebook'])->name('auth.facebook');
 Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFacebookCallback']);
+
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+});
+
 
 require __DIR__.'/auth.php';

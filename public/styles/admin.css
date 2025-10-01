@@ -1,0 +1,85 @@
+/* NAV */
+.header {
+    background: #fff;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+}
+.header .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.nav {
+    display: flex;
+    gap: 1rem;
+}
+.nav-btn {
+    background: none;
+    border: none;
+    font-weight: 500;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.nav-btn:hover {
+    background: #f2f2f2;
+}
+.nav-btn.active {
+    background: #000;
+    color: #fff;
+}
+
+/* Vues */
+.view {
+    display: none;
+    padding: 2rem 0;
+}
+.view.active {
+    display: block;
+}
+
+/* Admin Tabs */
+.admin-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.admin-tabs .tab-btn {
+    background: #f5f5f5;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+.admin-tabs .tab-btn.active {
+    background: #000;
+    color: #fff;
+}
+
+/* Cards */
+.admin-table, .profile-card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+}
+.btn-primary {
+    background: #000;
+    color: #fff;
+}
+.btn-primary:hover {
+    background: #333;
+}
+.btn-outline {
+    border: 1px solid #ccc;
+    background: #fff;
+}

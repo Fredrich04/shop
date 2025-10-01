@@ -12,15 +12,31 @@ use Illuminate\View\View;
 
 class ShopController extends Controller
 {
-    public function index(): View
+    public function index(): \Illuminate\View\View
     {
         $products = Product::with('category')
             ->active()
             ->orderBy('name')
             ->get();
 
-        return view('shop.index', compact('products'));
+        $orders = Order::where('user_id', auth()->id())
+            ->with('orderItems.product')
+            ->latest()
+            ->get();
+
+        return view('dashboard', [
+            'products' => $products,
+            'orders'   => $orders,
+        ]);
     }
+
+    public function getProducts()
+    {
+        $products = Product::all(); // ou ce que tu utilises comme modèle
+        return response()->json($products);
+    }
+
+
 
     public function addToCart(Request $request): JsonResponse
     {

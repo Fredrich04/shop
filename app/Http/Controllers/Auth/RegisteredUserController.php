@@ -45,18 +45,12 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
+        Auth::login($user);
 
-        session(['otp_user_id' => $user->id]);
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
 
-        $code = rand(100000, 999999); // 6 chiffres
-
-        EmailVerification::create([
-            'user_id' => $user->id,
-            'code' => $code,
-            'expires_at' => Carbon::now()->addMinutes(10),
-        ]);
-
-        return redirect()->route('dashboard');
+        return redirect('/dashboard');
     }
 }

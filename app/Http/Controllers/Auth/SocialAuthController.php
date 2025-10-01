@@ -30,6 +30,10 @@ class SocialAuthController extends Controller
             );
 
             Auth::login($user);
+
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
             return redirect('/dashboard');
         } catch (Exception $e) {
             return redirect('/login')->with('error', 'Erreur Google Login');
@@ -58,6 +62,11 @@ class SocialAuthController extends Controller
             );
 
             Auth::login($user);
+
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
             return redirect('/dashboard');
 
         } catch (Exception $e) {
