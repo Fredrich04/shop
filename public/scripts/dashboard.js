@@ -1,182 +1,224 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // ======================
-    // NAVBAR (Produits, Commandes, Panier, Profil, Admin)
-    // ======================
-    const navButtons = document.querySelectorAll(".nav-btn");
-    const views = document.querySelectorAll(".view");
+// public/js/dashboard.js
+document.addEventListener('DOMContentLoaded', () => {
+    // ============ Utils ============
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const toastContainer = document.getElementById('toastContainer');
 
-    navButtons.forEach(button => {
-        button.addEventListener("click", () => {
-            const target = button.getAttribute("data-view");
+    function showToast(message, type = 'success') {
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.style.padding = '0.75rem 1rem';
+        el.style.borderRadius = '8px';
+        el.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)';
+        el.style.background = type === 'success' ? '#ecfdf5' : '#fff1f2';
+        el.style.borderLeft = type === 'success' ? '4px solid #10B981' : '4px solid #ef4444';
+        el.innerText = message;
+        toastContainer.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
 
-            // désactiver toutes les vues
-            views.forEach(v => v.classList.remove("active"));
-            navButtons.forEach(b => b.classList.remove("active"));
+    // ============ NAVIGATION VUES ============
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const views = document.querySelectorAll('.view');
 
-            // activer la vue sélectionnée
-            button.classList.add("active");
-            document.getElementById(target + "View").classList.add("active");
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetName = btn.getAttribute('data-view') + 'View';
+            // toggle active
+            navButtons.forEach(b => b.classList.remove('active'));
+            views.forEach(v => v.classList.remove('active'));
+            btn.classList.add('active');
+            const target = document.getElementById(targetName);
+            if (target) target.classList.add('active');
+
+            // on view admin => nothing de spécial (les contenus admins sont rendus par blade)
         });
     });
 
-    // ======================
-    // ADMIN TABS (Produits, Catégories, Utilisateurs)
-    // ======================
-    const adminTabButtons = document.querySelectorAll(".tab-btn");
-    const adminContents = document.querySelectorAll(".tab-content");
-
-    adminTabButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-tab");
-
-            // reset
-            adminTabButtons.forEach(b => {
-                b.classList.remove("border-primary", "text-primary");
-                b.classList.add("border-transparent", "text-muted-foreground");
+    // ============ ADMIN TABS ============
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.getAttribute('data-tab'); // ex: 'products' => adminProducts id
+            // reset classes
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('border-primary', 'text-primary');
+                b.classList.add('border-transparent');
             });
-            adminContents.forEach(c => c.classList.add("hidden"));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
 
-            // activer le bon
-            btn.classList.add("border-primary", "text-primary");
-            btn.classList.remove("border-transparent", "text-muted-foreground");
-            document.getElementById("admin" + capitalize(target)).classList.remove("hidden");
+            btn.classList.add('border-primary', 'text-primary');
+            btn.classList.remove('border-transparent');
+            const content = document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (content) content.classList.remove('hidden');
         });
     });
 
-    // ======================
-    // PANIER
-    // ======================
-    const cartBadge = document.getElementById("cartBadge");
-    const cartCount = document.getElementById("cartCount");
-    const cartContent = document.getElementById("cartContent");
-
+    // ============ PANIER : refresh & actions ============
     async function refreshCart() {
         try {
-            const response = await fetch("/api/cart");
-            const data = await response.json();
+            const url = (window.routes && window.routes.apiCartGet) ? window.routes.apiCartGet : '/api/cart';
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Erreur récupération panier');
+            const data = await res.json();
 
-            if (!data.items || data.items.length === 0) {
-                cartContent.innerHTML = `
-                    <div id="emptyCart" class="text-center py-16">
-                        <i class="fas fa-shopping-bag text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-2xl font-bold mb-2">Votre panier est vide</h3>
-                        <p class="text-muted-foreground">Ajoutez des produits pour commencer vos achats</p>
-                    </div>`;
-                cartBadge.classList.add("hidden");
-                cartCount.textContent = "0 article(s) dans votre panier";
-                return;
+            // data.cart expected structure from your controller
+            const items = data.cart || data.items || [];
+            const count = data.cart_count ?? items.reduce((s,i)=>s+i.quantity,0);
+
+            const badge = document.getElementById('cartBadge');
+            const cartCountEl = document.getElementById('cartCount');
+
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
-
-            let html = "";
-            let totalItems = 0;
-
-            data.items.forEach(item => {
-                totalItems += item.quantity;
-                html += `
-                    <div class="order border p-4 rounded mb-4 flex justify-between items-center">
-                        <div>
-                            <h4>${item.product.name}</h4>
-                            <span>${item.quantity} x ${item.product.price}€ = ${(item.quantity * item.product.price).toFixed(2)}€</span>
-                        </div>
-                        <form method="POST" action="#" onsubmit="event.preventDefault(); removeFromCart(${item.product.id});">
-                            <button class="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
-                        </form>
-                    </div>`;
-            });
-
-            cartContent.innerHTML = html;
-            cartBadge.textContent = totalItems;
-            cartBadge.classList.remove("hidden");
-            cartCount.textContent = `${totalItems} article(s) dans votre panier`;
-        } catch (error) {
-            console.error("Erreur refreshCart:", error);
+            if (cartCountEl) cartCountEl.textContent = `${count} article(s) dans votre panier`;
+        } catch (err) {
+            console.error(err);
         }
     }
 
-    // Ajouter au panier
-    document.querySelectorAll(".add-to-cart").forEach(btn => {
-        btn.addEventListener("click", async () => {
+    // Attach add-to-cart buttons
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
             const id = btn.dataset.id;
             try {
-                const response = await fetch("/api/cart/add", {
-                    method: "POST",
+                const res = await fetch((window.routes && window.routes.apiCartAdd) ? window.routes.apiCartAdd : '/api/cart/add', {
+                    method: 'POST',
                     headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf
                     },
                     body: JSON.stringify({ product_id: id, quantity: 1 })
                 });
-
-                const data = await response.json();
-                if (data.success) {
-                    showToast("Produit ajouté au panier !");
-                    refreshCart();
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Ajouté au panier');
+                    await refreshCart();
                 } else {
-                    showToast("Erreur lors de l'ajout au panier", "error");
+                    showToast(data.message || 'Erreur', 'error');
                 }
-            } catch (error) {
-                console.error(error);
-                showToast("Erreur serveur", "error");
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur', 'error');
             }
         });
     });
 
-    // Supprimer du panier
-    window.removeFromCart = async (id) => {
-        try {
-            const response = await fetch("/api/cart/remove", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ product_id: id })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                showToast("Produit supprimé du panier !");
-                refreshCart();
-            } else {
-                showToast("Erreur lors de la suppression", "error");
-            }
-        } catch (error) {
-            console.error(error);
-            showToast("Erreur serveur", "error");
-        }
-    };
-
-    // Init panier
+    // initial cart load
     refreshCart();
 
-    // ======================
-    // TOAST SYSTEM
-    // ======================
-    function showToast(message, type = "success") {
-        const container = document.getElementById("toastContainer");
-        const toast = document.createElement("div");
+    // ============ MODAL CREATE PRODUCT (AJAX) ============
+    const productModal = document.getElementById('productModal');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const productForm = document.getElementById('productForm');
 
-        toast.className = `toast ${type} bg-${type === "success" ? "green" : "red"}-500 text-white px-4 py-2 rounded mb-2 shadow`;
-        toast.textContent = message;
-
-        container.appendChild(toast);
-
-        setTimeout(() => {
-            toast.classList.add("opacity-0", "transition-opacity");
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // open modal
+            if (productModal) productModal.classList.add('active');
+            // reset form
+            if (productForm) productForm.reset();
+        });
     }
 
-    // Si message Laravel en flash
-    const flashMessage = document.querySelector("meta[name='flash-message']");
-    if (flashMessage && flashMessage.content) {
-        showToast(flashMessage.content, "success");
+    // close modal buttons
+    document.querySelectorAll('.modal-close, .modal-cancel').forEach(b => {
+        b.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        });
+    });
+
+    if (productForm) {
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // collect inputs
+            const payload = {
+                name: document.getElementById('productName').value,
+                price: document.getElementById('productPrice').value,
+                stock: document.getElementById('productStock').value,
+                category_id: document.getElementById('productCategory').value,
+                description: document.getElementById('productDescription').value,
+                image_url: document.getElementById('productImage').value
+            };
+
+            const storeUrl = (window.routes && window.routes.adminProductsStore) ? window.routes.adminProductsStore : '/admin/products';
+
+            try {
+                const res = await fetch(storeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                    credentials: 'same-origin'
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'Produit créé', 'success');
+                    // reload pour rafraîchir la liste serveur-side
+                    setTimeout(() => { window.location.reload(); }, 800);
+                } else {
+                    // validation errors
+                    const msg = data.message || 'Erreur création produit';
+                    showToast(Array.isArray(data.errors) ? Object.values(data.errors).flat().join(', ') : msg, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur', 'error');
+            }
+        });
     }
 
-    // ======================
-    // HELPER
-    // ======================
-    function capitalize(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
+    // ============ Ajout rapide catégorie (prompt -> POST) ============
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    if (addCategoryBtn) {
+        addCategoryBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const name = prompt('Nom de la catégorie :');
+            if (!name) return;
+
+            const url = (window.routes && window.routes.adminCategoriesStore) ? window.routes.adminCategoriesStore : '/admin/categories';
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf
+                    },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'Catégorie ajoutée');
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    showToast(data.message || 'Erreur', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur', 'error');
+            }
+        });
     }
-});
+
+    // ============ Confirm deletes (progressive enhancement) ============
+    document.querySelectorAll('form[method="POST"]').forEach(f => {
+        // for forms that delete, ask confirmation
+        const method = f.querySelector('input[name="_method"]')?.value ?? '';
+        if (method.toUpperCase() === 'DELETE') {
+            f.addEventListener('submit', (e) => {
+                if (!confirm('Confirmer la suppression ?')) e.preventDefault();
+            });
+        }
+    });
+
+}); // DOMContentLoaded

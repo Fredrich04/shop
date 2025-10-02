@@ -52,23 +52,26 @@
                     <h2 class="text-3xl font-bold mb-2">Nos Produits</h2>
                     <p class="text-muted-foreground">Découvrez notre sélection de produits high-tech</p>
                 </div>
-                <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div class="products-grid" id="products-grid">
                     @foreach($products as $product)
-                        <div class="border rounded-lg p-4 flex flex-col">
-                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="mb-4 h-48 w-full object-cover rounded">
-                            <h3 class="font-bold text-lg">{{ $product->name }}</h3>
-                            <p class="text-muted-foreground mb-2">{{ $product->description }}</p>
-                            <span class="font-bold">{{ $product->price }}€</span>
-                            @if(auth()->user()->role === 'admin')
-                                <div class="mt-2 flex gap-2">
-                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</a>
-                                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                                    </form>
+                        <div class="product-card">
+                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="product-image">
+                            <div class="product-info">
+                                <div class="product-header">
+                                    <h3 class="product-name">{{ $product->name }}</h3>
+                                    <span class="product-category">{{ $product->category->name }}</span>
                                 </div>
-                            @endif
+                                <p class="product-description">{{ $product->description }}</p>
+                                <div class="product-footer">
+                                    <span class="product-price">{{ $product->formatted_price }}</span>
+                                    <span class="product-stock">Stock: {{ $product->stock }}</span>
+                                </div>
+                                <button class="btn add-to-cart-btn"
+                                    data-product-id="{{ $product->id }}"
+                                    {{ $product->stock === 0 ? 'disabled' : '' }}>
+                                    {{ $product->stock === 0 ? 'Rupture de stock' : 'Ajouter au panier' }}
+                                </button>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -88,18 +91,6 @@
                         <h3 class="text-2xl font-bold mb-2">Votre panier est vide</h3>
                         <p class="text-muted-foreground">Ajoutez des produits pour commencer vos achats</p>
                     </div>
-                    @foreach($orders as $order)
-                        <div class="order border p-4 rounded mb-4">
-                            <h4>Commande #{{ $order->id }} - {{ $order->created_at->format('d/m/Y') }}</h4>
-                            <span>Total : {{ $order->total }}€</span>
-                            <ul class="mt-2">
-                                @foreach($order->orderItems as $item)
-                                    <li>{{ $item->product->name }} x {{ $item->quantity }} = {{ $item->price * $item->quantity }}€</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endforeach
-
                 </div>
             </div>
         </div>
@@ -111,7 +102,19 @@
                     <h2 class="text-3xl font-bold mb-2">Historique des Commandes</h2>
                     <p class="text-muted-foreground">Consultez vos achats précédents</p>
                 </div>
-                <div id="transactionsList"></div>
+                @foreach($orders as $order)
+                    <div class="order border p-4 rounded mb-4">
+                        <h4 class="font-bold">
+                            Command by {{ $order->user->name }} - {{ $order->created_at->format('d/m/Y') }}
+                        </h4>
+                        <span>Total : {{ $order->total }}€</span>
+                        <ul class="mt-2">
+                            @foreach($order->orderItems as $item)
+                                <li>{{ $item->product->name }} x {{ $item->quantity }} = {{ $item->price * $item->quantity }}€</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endforeach
             </div>
         </div>
 
@@ -207,11 +210,11 @@
                                         <div class="flex justify-between items-center border-b py-2">
                                             <span>{{ $product->name }}</span>
                                             <div class="flex gap-2">
-                                                <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</a>
+                                                <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-yellow-500 text-black px-2 py-1 rounded">Edit</a>
                                                 <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                                                    <button class="bg-red-500 text-color-red px-2 py-1 rounded">Delete</button>
                                                 </form>
                                             </div>
                                         </div>
