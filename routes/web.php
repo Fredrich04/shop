@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\ProductController;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
@@ -14,7 +15,6 @@ use App\Http\Controllers\AdminController;
 Route::get('/', function () {
     return view('welcome');
 });
-
 
 
 Route::middleware(['auth'])->group(function () {
@@ -48,5 +48,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 });
 
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'isAdmin'])->group(function () {
+    // Produits
+    Route::resource('products', ProductController::class);
+
+    // Catégories
+    Route::resource('categories', ShopController::class);
+
+    // Utilisateurs
+    Route::patch('/users/{user}/update-role', [UserController::class, 'updateRole'])->name('users.updateRole');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');
+});
 
 require __DIR__.'/auth.php';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -11,10 +12,10 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        $products = \App\Models\Product::with('category')->get();
-        $orders = \App\Models\Order::with('orderItems.product')->latest()->get();
-        $users = \App\Models\User::all();
-        $categories = \App\Models\Category::all();
+        $products = Product::with('category')->get();
+        $orders = Order::with('orderItems.product')->latest()->get();
+        $users = User::all();
+        $categories = Category::all();
 
         return view('admin.dashboard', compact('products', 'orders', 'users', 'categories'));
     }

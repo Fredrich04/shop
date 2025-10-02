@@ -52,7 +52,26 @@
                     <h2 class="text-3xl font-bold mb-2">Nos Produits</h2>
                     <p class="text-muted-foreground">Découvrez notre sélection de produits high-tech</p>
                 </div>
-                <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    @foreach($products as $product)
+                        <div class="border rounded-lg p-4 flex flex-col">
+                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="mb-4 h-48 w-full object-cover rounded">
+                            <h3 class="font-bold text-lg">{{ $product->name }}</h3>
+                            <p class="text-muted-foreground mb-2">{{ $product->description }}</p>
+                            <span class="font-bold">{{ $product->price }}€</span>
+                            @if(auth()->user()->role === 'admin')
+                                <div class="mt-2 flex gap-2">
+                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</a>
+                                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
 
@@ -69,37 +88,18 @@
                         <h3 class="text-2xl font-bold mb-2">Votre panier est vide</h3>
                         <p class="text-muted-foreground">Ajoutez des produits pour commencer vos achats</p>
                     </div>
-                    <div id="cartItems" class="hidden">
-                        <div class="grid lg:grid-cols-3 gap-8">
-                            <div class="lg:col-span-2">
-                                <div id="cartItemsList" class="space-y-4"></div>
-                            </div>
-                            <div class="lg:col-span-1">
-                                <div class="bg-card border rounded-lg p-6 sticky top-24">
-                                    <h3 class="text-xl font-bold mb-4">Résumé de la commande</h3>
-                                    <div class="space-y-4">
-                                        <div class="flex justify-between">
-                                            <span>Sous-total</span>
-                                            <span id="subtotal">0€</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>Livraison</span>
-                                            <span>Gratuite</span>
-                                        </div>
-                                        <div class="border-t pt-4">
-                                            <div class="flex justify-between font-bold text-lg">
-                                                <span>Total</span>
-                                                <span id="total">0€</span>
-                                            </div>
-                                        </div>
-                                        <button id="checkoutBtn" class="w-full bg-primary text-primary-foreground px-4 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                                            Passer la commande
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                    @foreach($orders as $order)
+                        <div class="order border p-4 rounded mb-4">
+                            <h4>Commande #{{ $order->id }} - {{ $order->created_at->format('d/m/Y') }}</h4>
+                            <span>Total : {{ $order->total }}€</span>
+                            <ul class="mt-2">
+                                @foreach($order->orderItems as $item)
+                                    <li>{{ $item->product->name }} x {{ $item->quantity }} = {{ $item->price * $item->quantity }}€</li>
+                                @endforeach
+                            </ul>
                         </div>
-                    </div>
+                    @endforeach
+
                 </div>
             </div>
         </div>
@@ -197,12 +197,26 @@
                             <div id="adminProducts" class="tab-content">
                                 <div class="flex justify-between items-center mb-6">
                                     <h3 class="text-xl font-bold">Gestion des Produits</h3>
-                                    <button id="addProductBtn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                                    <a href="{{ route('admin.products.create') }}" id="addProductBtn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors">
                                         <i class="fas fa-plus mr-2"></i>
                                         Ajouter un produit
-                                    </button>
+                                    </a>
                                 </div>
-                                <div id="adminProductsList" class="bg-card border rounded-lg overflow-hidden"></div>
+                                <div id="adminProductsList" class="bg-card border rounded-lg overflow-hidden p-4">
+                                    @foreach($products as $product)
+                                        <div class="flex justify-between items-center border-b py-2">
+                                            <span>{{ $product->name }}</span>
+                                            <div class="flex gap-2">
+                                                <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</a>
+                                                <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                             <div id="adminCategories" class="tab-content hidden">
                                 <div class="flex justify-between items-center mb-6">
@@ -218,7 +232,28 @@
                                 <div class="mb-6">
                                     <h3 class="text-xl font-bold">Gestion des Utilisateurs</h3>
                                 </div>
-                                <div id="adminUsersList" class="bg-card border rounded-lg overflow-hidden"></div>
+                                <div id="adminUsersList" class="bg-card border rounded-lg overflow-hidden p-4">
+                                    @foreach($users as $user)
+                                        <div class="flex justify-between items-center border-b py-2">
+                                            <span>{{ $user->name }} ({{ $user->email }}) - Rôle : {{ $user->role }}</span>
+                                            <div class="flex gap-2">
+                                                <form action="{{ route('admin.users.updateRole', $user->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <select name="role" onchange="this.form.submit()" class="border rounded">
+                                                        <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
+                                                        <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
+                                                    </select>
+                                                </form>
+                                                <form action="{{ route('admin.users.delete', $user->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -252,12 +287,9 @@
                 <div>
                     <label for="productCategory" class="block text-sm font-medium mb-1">Catégorie</label>
                     <select id="productCategory" class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
-                        <option value="Smartphone">Smartphone</option>
-                        <option value="Ordinateur">Ordinateur</option>
-                        <option value="Audio">Audio</option>
-                        <option value="Wearable">Wearable</option>
-                        <option value="Tablette">Tablette</option>
-                        <option value="Photo">Photo</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
