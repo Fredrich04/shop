@@ -16,6 +16,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/paypal/payment', [PayPalController::class, 'createPayment'])->name('paypal.payment');
+Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
+Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [ShopController::class, 'index'])->name('shop.index');
@@ -49,13 +52,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'isAdmin'])->group(function () {
-    // Produits
     Route::resource('products', ProductController::class);
 
-    // Catégories
     Route::resource('categories', ShopController::class);
 
-    // Utilisateurs
     Route::patch('/users/{user}/update-role', [UserController::class, 'updateRole'])->name('users.updateRole');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');
 });

@@ -24,7 +24,7 @@ class ShopController extends Controller
             ->latest()
             ->get();
 
-        return view('dashboard', [
+        return view('shop.index', [
             'products' => $products,
             'orders'   => $orders,
         ]);

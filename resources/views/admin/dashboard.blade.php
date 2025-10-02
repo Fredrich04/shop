@@ -23,7 +23,7 @@
                 <button class="nav-btn relative px-4 py-2 rounded-lg transition-colors hover:bg-muted" data-view="cart">
                     <i class="fas fa-shopping-cart mr-2"></i>
                     Panier
-                    <span id="cartBadge" class="cart-badge hidden">0</span>
+                    <span class="cart-badge" id="cart-badge" style="display: none;">0</span>
                 </button>
 
                 @auth
@@ -66,7 +66,7 @@
                                     <span class="product-price">{{ $product->formatted_price }}</span>
                                     <span class="product-stock">Stock: {{ $product->stock }}</span>
                                 </div>
-                                <button class="btn add-to-cart-btn"
+                                <button class="btn add-to-cart"
                                     data-product-id="{{ $product->id }}"
                                     {{ $product->stock === 0 ? 'disabled' : '' }}>
                                     {{ $product->stock === 0 ? 'Rupture de stock' : 'Ajouter au panier' }}
@@ -79,20 +79,9 @@
         </div>
 
         <!-- Cart View -->
-        <div id="cartView" class="view">
-            <div class="container mx-auto px-4 py-8">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold mb-2">Votre Panier</h2>
-                    <p id="cartCount" class="text-muted-foreground">0 article(s) dans votre panier</p>
-                </div>
-                <div id="cartContent">
-                    <div id="emptyCart" class="text-center py-16">
-                        <i class="fas fa-shopping-bag text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-2xl font-bold mb-2">Votre panier est vide</h3>
-                        <p class="text-muted-foreground">Ajoutez des produits pour commencer vos achats</p>
-                    </div>
-                </div>
-            </div>
+        <div class="view" id="cart-view">
+            <h2 class="section-title">Votre Panier</h2>
+            <div id="cart-content"></div>
         </div>
 
         <!-- Transactions View -->
@@ -100,7 +89,6 @@
             <div class="container mx-auto px-4 py-8">
                 <div class="mb-8">
                     <h2 class="text-3xl font-bold mb-2">Historique des Commandes</h2>
-                    <p class="text-muted-foreground">Consultez vos achats précédents</p>
                 </div>
                 @foreach($orders as $order)
                     <div class="order border p-4 rounded mb-4">
@@ -248,11 +236,13 @@
                                                         <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
                                                     </select>
                                                 </form>
-                                                <form action="{{ route('admin.users.delete', $user->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
-                                                </form>
+                                                @if($user->role === 'user')
+                                                    <form action="{{ route('admin.users.delete', $user->id) }}" method="POST">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="bg-red-500 text-black px-2 py-1 rounded">Supprimer</button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
