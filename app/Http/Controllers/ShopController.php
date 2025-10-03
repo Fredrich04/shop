@@ -261,4 +261,5 @@ class ShopController extends Controller
 
         return response()->json($orders);
     }
+
 }

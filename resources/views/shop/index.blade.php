@@ -17,16 +17,11 @@
                     🛒 Panier
                     <span class="cart-badge" id="cart-badge" style="display: none;">0</span>
                 </button>
+                <button class="nav-btn px-4 py-2 rounded-lg transition-colors hover:bg-muted" data-view="profile">
+                    <i class="fas fa-user mr-2"></i>
+                    <span class="hidden sm:inline">{{ auth()->user()->name ?? 'Profil' }}</span>
+                </button>
             </nav>
-            @auth
-                <div class="flex items-center space-x-2 ml-4">
-                    <span class="font-medium">{{ auth()->user()->name }}</span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition">Déconnexion</button>
-                    </form>
-                </div>
-            @endauth
         </div>
     </div>
 </header>
@@ -75,6 +70,62 @@
             <p class="section-subtitle">Historique de vos achats et commandes</p>
             <div id="transactions-content"></div>
         </div>
+
+        <div id="profileView" class="view">
+            <div class="container mx-auto px-4 py-8">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-2">Mon Profil</h2>
+                    <p class="text-muted-foreground">Gérez vos informations personnelles</p>
+                </div>
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-card border rounded-lg p-6">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-2xl text-muted-foreground"></i>
+                            </div>
+                            <div>
+                                <h3 id="profileName" class="text-xl font-bold">{{ auth()->user()->name ?? 'Utilisateur' }}</h3>
+                                <p id="profileEmail" class="text-muted-foreground">{{ auth()->user()->email ?? 'email@example.com' }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4 mb-6">
+                            <div class="flex justify-between py-3 border-b">
+                                <span class="font-medium text-muted-foreground">Téléphone</span>
+                                <span id="profilePhone">{{ auth()->user()->phone ?? '+33 6 12 34 56 78' }}</span>
+                            </div>
+                            <div class="flex justify-between py-3 border-b">
+                                <span class="font-medium text-muted-foreground">Adresse</span>
+                                <span id="profileAddress">{{ auth()->user()->address ?? '123 Rue de la Paix, 75001 Paris' }}</span>
+                            </div>
+                            <div class="flex justify-between py-3 border-b">
+                                <span class="font-medium text-muted-foreground">Membre depuis</span>
+                                <span id="profileMember">{{ auth()->user()->created_at?->format('Y') ?? '2024' }}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="text-center p-4 bg-muted rounded-lg">
+                                <div id="totalOrders" class="text-2xl font-bold text-primary">0</div>
+                                <div class="text-sm text-muted-foreground">Commandes</div>
+                            </div>
+                            <div class="text-center p-4 bg-muted rounded-lg">
+                                <div id="totalSpent" class="text-2xl font-bold text-primary">0€</div>
+                                <div class="text-sm text-muted-foreground">Total dépensé</div>
+                            </div>
+                        </div>
+                        @auth
+                            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full border border-border text-foreground px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>
+                                    Se déconnecter
+                                </button>
+                            </form>
+                        @endauth
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </main>
 @endsection
@@ -234,7 +285,7 @@
                         <span>Total</span>
                         <span>${data.cart_total.toFixed(2)}€</span>
                     </div>
-                    <a href="{{ route('paypal.payment') }}" class="btn" style="text-decoration:none;">Passer la commande</a>
+                    <a href="{{ route('stripe.checkout') }}" class="btn" style="text-decoration:none;">Passer la commande</a>
                 </div>
             </div>
         `;
@@ -336,51 +387,51 @@
     }
 
     function renderTransactions(transactions) {
-    const transactionsContent = document.getElementById('transactions-content');
+        const transactionsContent = document.getElementById('transactions-content');
 
-    if (!transactions || transactions.length === 0) {
-        transactionsContent.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📦</div>
-                <h3>Aucune commande</h3>
-                <p>Vous n'avez pas encore passé de commande</p>
-            </div>
-        `;
-        return;
-    }
-
-    transactionsContent.innerHTML = transactions.map(transaction => {
-        const statusInfo = getStatusInfo(transaction.status);
-
-        return `
-            <div class="transaction-card">
-                <div class="transaction-header">
-                    <div>
-                        <div class="transaction-date">📅 ${new Date(transaction.date).toLocaleDateString('fr-FR')}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <span class="transaction-status px-2 py-1 rounded ${statusInfo.color}">
-                            ${statusInfo.text}
-                        </span>
-                        <div class="transaction-total">${Number(transaction.total).toFixed(2)}€</div>
-                    </div>
+        if (!transactions || transactions.length === 0) {
+            transactionsContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <h3>Aucune commande</h3>
+                    <p>Vous n'avez pas encore passé de commande</p>
                 </div>
-                <div class="transaction-items">
-                    <h4 style="margin-bottom: 0.5rem;">Articles commandés:</h4>
-                    ${transaction.items.map(item => `
-                        <div class="transaction-item">
-                            <div>
-                                <span style="font-weight: 500;">${item.product_name}</span>
-                                <span style="color: #666; margin-left: 0.5rem;">x${item.quantity}</span>
-                            </div>
-                            <span style="font-weight: 500;">${Number(item.subtotal).toFixed(2)}€</span>
+            `;
+            return;
+        }
+
+        transactionsContent.innerHTML = transactions.map(transaction => {
+            const statusInfo = getStatusInfo(transaction.status);
+
+            return `
+                <div class="transaction-card">
+                    <div class="transaction-header">
+                        <div>
+                            <div class="transaction-date">📅 ${new Date(transaction.date).toLocaleDateString('fr-FR')}</div>
                         </div>
-                    `).join('')}
+                        <div style="text-align: right;">
+                            <span class="transaction-status px-2 py-1 rounded ${statusInfo.color}">
+                                ${statusInfo.text}
+                            </span>
+                            <div class="transaction-total">${Number(transaction.total).toFixed(2)}€</div>
+                        </div>
+                    </div>
+                    <div class="transaction-items">
+                        <h4 style="margin-bottom: 0.5rem;">Articles commandés:</h4>
+                        ${transaction.items.map(item => `
+                            <div class="transaction-item">
+                                <div>
+                                    <span style="font-weight: 500;">${item.product_name}</span>
+                                    <span style="color: #666; margin-left: 0.5rem;">x${item.quantity}</span>
+                                </div>
+                                <span style="font-weight: 500;">${Number(item.subtotal).toFixed(2)}€</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-        `;
-    }).join('');
-}
+            `;
+        }).join('');
+    }
 
 </script>
 @endsection

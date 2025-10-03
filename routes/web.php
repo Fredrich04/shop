@@ -10,7 +10,9 @@ use Stripe\PaymentIntent;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\AdminController;
-
+use App\Http\Middleware\IsAdmin;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\StripeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,6 +21,10 @@ Route::get('/', function () {
 Route::get('/paypal/payment', [PayPalController::class, 'createPayment'])->name('paypal.payment');
 Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
 Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
+
+Route::get('/stripe/checkout', [StripeController::class, 'checkout'])->name('stripe.checkout');
+Route::get('/stripe/success', [StripeController::class, 'success'])->name('stripe.success');
+Route::get('/stripe/cancel', [StripeController::class, 'cancel'])->name('stripe.cancel');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [ShopController::class, 'index'])->name('shop.index');
@@ -49,15 +55,11 @@ Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFaceb
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-});
-
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'isAdmin'])->group(function () {
     Route::resource('products', ProductController::class);
-
-    Route::resource('categories', ShopController::class);
-
+    Route::resource('categories', CategoryController::class);
     Route::patch('/users/{user}/update-role', [UserController::class, 'updateRole'])->name('users.updateRole');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.delete');
 });
+
 
 require __DIR__.'/auth.php';

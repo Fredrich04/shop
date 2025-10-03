@@ -66,7 +66,7 @@
                                     <span class="product-price">{{ $product->formatted_price }}</span>
                                     <span class="product-stock">Stock: {{ $product->stock }}</span>
                                 </div>
-                                <button class="btn add-to-cart"
+                                <button class="btn add-to-cart-btn"
                                     data-product-id="{{ $product->id }}"
                                     {{ $product->stock === 0 ? 'disabled' : '' }}>
                                     {{ $product->stock === 0 ? 'Rupture de stock' : 'Ajouter au panier' }}
@@ -79,8 +79,7 @@
         </div>
 
         <!-- Cart View -->
-        <div class="view" id="cart-view">
-            <h2 class="section-title">Votre Panier</h2>
+        <div class="view" id="cartView">
             <div id="cart-content"></div>
         </div>
 
@@ -217,7 +216,20 @@
                                         Ajouter une catégorie
                                     </button>
                                 </div>
-                                <div id="adminCategoriesList" class="bg-card border rounded-lg overflow-hidden"></div>
+                                <div id="adminCategoriesList" class="bg-card border rounded-lg overflow-hidden">
+                                    @foreach($categories as $category)
+                                        <div class="flex justify-between items-center border-b py-2">
+                                            <span>{{ $category->name }}</span>
+                                            <div class="flex gap-2">
+                                                <form action="{{ route('admin.categories.destroy', $category->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="bg-red-500 text-color-red px-2 py-1 rounded">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                             <div id="adminUsers" class="tab-content hidden">
                                 <div class="mb-6">
