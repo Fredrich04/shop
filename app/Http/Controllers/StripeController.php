@@ -25,7 +25,7 @@ class StripeController extends Controller
 
         $checkout_session = StripeSession::create([
             'payment_method_types' => ['card'],
-            'line_items' => array_map(function ($item) {
+            'line_items' => array_values(array_map(function ($item) {
                 return [
                     'price_data' => [
                         'currency' => 'eur',
@@ -36,7 +36,7 @@ class StripeController extends Controller
                     ],
                     'quantity' => $item['quantity'],
                 ];
-            }, $cart),
+            }, $cart)),
             'mode' => 'payment',
             'success_url' => route('stripe.success'),
             'cancel_url' => route('stripe.cancel'),
@@ -60,7 +60,7 @@ class StripeController extends Controller
 
         $session_id = $request->get('session_id');
         if (!$session_id) {
-            return redirect()->route('dashboard')->with('error', 'Session Stripe manquante.');
+            return redirect()->route('shop.index')->with('error', 'Session Stripe manquante.');
         }
 
         $session = StripeSession::retrieve($session_id);
@@ -98,7 +98,7 @@ class StripeController extends Controller
 
             session()->forget('cart');
 
-            return redirect()->route('dashboard')->with('success', 'Paiement réussi et commande validée !');
+            return redirect()->route('shop.index')->with('success', 'Paiement réussi et commande validée !');
         }
 
         return redirect()->route('dashboard')->with('error', 'Paiement non validé.');

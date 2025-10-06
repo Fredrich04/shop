@@ -22,7 +22,7 @@ Route::get('/paypal/payment', [PayPalController::class, 'createPayment'])->name(
 Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
 Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
 
-Route::get('/stripe/checkout', [StripeController::class, 'checkout'])->name('stripe.checkout');
+Route::get('/checkout', [StripeController::class, 'createPayment'])->name('stripe.checkout');
 Route::get('/stripe/success', [StripeController::class, 'success'])->name('stripe.success');
 Route::get('/stripe/cancel', [StripeController::class, 'cancel'])->name('stripe.cancel');
 
